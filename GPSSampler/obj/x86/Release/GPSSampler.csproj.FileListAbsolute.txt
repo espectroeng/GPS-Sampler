@@ -1,0 +1,10 @@
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\bin\Release\GPSSampler.exe
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\bin\Release\GPSSampler.pdb
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\bin\Release\CyUSB.dll
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Release\GPSSampler.Form1.resources
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Release\GPSSampler.Properties.Resources.resources
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Release\GPSSampler.csproj.GenerateResource.Cache
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Release\GPSSampler.exe
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Release\GPSSampler.pdb
+C:\Adilson\Profissional\Projetos\FrontEndGps\Software\GPSSampler\GPSSampler\obj\x86\Release\GPSSampler.exe
+C:\Adilson\Profissional\Projetos\FrontEndGps\Software\GPSSampler\GPSSampler\obj\x86\Release\GPSSampler.pdb

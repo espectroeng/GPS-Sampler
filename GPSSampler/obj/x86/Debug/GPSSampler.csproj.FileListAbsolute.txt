@@ -1,0 +1,8 @@
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\bin\Debug\GPSSampler.exe
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\bin\Debug\GPSSampler.pdb
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Debug\GPSSampler.Form1.resources
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Debug\GPSSampler.Properties.Resources.resources
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Debug\GPSSampler.csproj.GenerateResource.Cache
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Debug\GPSSampler.exe
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Debug\GPSSampler.pdb
+C:\Users\user\documents\visual studio 2010\Projects\GPSSampler\GPSSampler\obj\x86\Debug\GPSSampler.csprojResolveAssemblyReference.cache
