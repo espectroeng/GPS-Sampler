@@ -8,8 +8,8 @@ namespace GPSSampler
     {
 
         //Constantes*******************************************************
-        const int MAXREADPKTSIZE = 262; // (256 bytes de dados do pacote + 6 cabeçalho)
-        const int RESPWPKTSIZE = 11; // (0x80 0x00 0x00 DONE!\r\n 0x00)
+        const int MAXREADPKTSIZE = 512; // (500 bytes de dados + 12 cabeçalho?) // valores originais 262 (256 bytes de dados do pacote + 6 cabeçalho)
+        const int RESPWPKTSIZE = 10; // valores originais 11// (0x80 0x00 0x00 DONE!\r\n 0x00)
         const int RESPRPKTSIZE = 14; // (0x80 0x00 0x00 READ:x??\r\n0x00)
         //*****************************************************************
 
@@ -32,8 +32,10 @@ namespace GPSSampler
 
         public int MaxPkgSizeIn
         {
-            get { return maxPkgSizeIn; }
-            //set { maxPkgSizeIn = value; }
+            get { return maxPkgSizeIn; }// original
+           // set { maxPkgSizeIn = MAXREADPKTSIZE; } //value;
+
+
         }
 
         private int maxPkgSizeOut;
@@ -64,13 +66,27 @@ namespace GPSSampler
             int count = 0;
 
             CyConst.SetClassGuid("{CDBF8987-75F1-468e-8217-97197F88F773}");
+
+            if (usbDevices != null)
+            {
+                usbDevices.DeviceRemoved -= usbDevices_DeviceRemoved;
+                usbDevices.DeviceAttached -= usbDevices_DeviceAttached;
+                usbDevices.Dispose();
+            }
             usbDevices = new USBDeviceList(CyConst.DEVICES_CYUSB);
+
+            //eventos
             usbDevices.DeviceAttached += new EventHandler(usbDevices_DeviceAttached); //atribuindo evento de remoção física do dispositivo USB
             usbDevices.DeviceRemoved += new EventHandler(usbDevices_DeviceRemoved); //atribuindo evento de conecção física do dispositivo USB
-            fx2 = usbDevices[0x04B4, 0x8613] as CyFX2Device; //criando objeto para dispositivo com VID/PID especificado
+            //fx2 = usbDevices[0x04B4, 0x8613] as CyFX2Device; //criando objeto para dispositivo com VID/PID especificado
+            fx2 = usbDevices[0] as CyFX2Device; //criando objeto para dispositivo com VID/PID especificado
+
+            //A comunicação nesse caso é somente para atualizacao do firmware.
+            //Caso o dispositivo exista é realizada a atualização do firmware.
 
             if (fx2 != null) //caso dispositivo exista executa:
             {
+                //update no firmware
                 fx2.LoadRAM(firmFile);  //carregando arquivo do firmware para o chip cypress
                 fx2.ReConnect(); //forca reconexao do dispositivo USB
                 System.Threading.Thread.Sleep(1000); //aguarda 1 segundo para reenumeracao
@@ -97,6 +113,11 @@ namespace GPSSampler
             }
             else
             {
+                //endpoint é um buffer em um dispositivo usb, o host pode enviar e receber dados do dispositivo
+                //os endpoints podem ser divididos entre controle ou dados
+                //0x02 e 0x86 sao os enderecos de out e in do pipe
+                //um dado é transferido de atraves de uma abstracao chamada pipe,que é um termo de software
+                //apenas, um pipe fala com um endpoint que tem um endereço especifico
                 uSBavaiable = true;
                 EndptOut = myDevice.EndPointOf(0x02) as CyBulkEndPoint;// Estabelecendo endpoint OUT
                 EndptOut.Abort();
@@ -104,10 +125,11 @@ namespace GPSSampler
                 EndptIn = myDevice.EndPointOf(0x86) as CyBulkEndPoint;// Estabelecendo endpoint IN
                 EndptIn.Abort();
                 EndptIn.Reset();
+                
                 maxPkgSizeIn = EndptIn.MaxPktSize;
                 maxPkgSizeOut = EndptOut.MaxPktSize;
                 //  EndptIn.XferMode = XMODE.
-
+                
                 EndptOut.TimeOut = 1000;
                 EndptIn.TimeOut = 500;
 
@@ -120,14 +142,16 @@ namespace GPSSampler
                 return true; //tudo ok na inicialização
             }
 
-        }
+        } // end Initialize()
 
+        //Limpa Buffer de saída************************************************
         private void ClearBufferOut()
         {
             EndptOut.Abort();
             EndptOut.Reset();
         }
 
+        //Limpa buffer de entrada**********************************************
         private void ClearBufferIn()
         {
             EndptIn.Abort();
@@ -169,8 +193,10 @@ namespace GPSSampler
 
         }
 
+
         public bool sendWritePkt(string device, int address, int data)
         {
+            //x80 x00 x00 "W" x20 "P" "L" "L" x20 addr addr addr addr x20 data data x0D x0A
             string auxAddr, auxData;
             byte[] bufferOut, bufferIn;
             int len;
@@ -207,6 +233,9 @@ namespace GPSSampler
 
                         //Checando retorno do device
                         len = EndptIn.MaxPktSize;
+                        // XferData é um metodo da classe CyControlEndPoint que recebe ou envia um dado
+                        //a transmissão de dados acontece de maneira sincrona e não retorna ate que a transmissão
+                        //esteja completa
                         EndptIn.XferData(ref bufferIn, ref len);
                         if (bufferIn[3] != (char)'D')
                         {
@@ -288,9 +317,9 @@ namespace GPSSampler
                         }
                         else
                         {
-                            retData = new byte[256]; //256 bytes de dados retornados (+ cabeçalho de 6 bytes)
-                            for (i = 6; i < 262; i++)
-                                retData[i - 6] = (byte)bufferIn[i];
+                            retData = new byte[500]; //1024 bytes de dados retornados (+ cabeçalho de 12 bytes cada)
+                            for (i = 12; i < 512; i++)
+                                retData[i - 12] = (byte)bufferIn[i];
                         }
                         return true; //Escrita sem erros
                     }
@@ -314,5 +343,75 @@ namespace GPSSampler
             }
 
         }
+
+
+        /// <summary>
+        /// Metodo utilizado para leitura de dados em batelada
+        /// </summary>
+        /// <param name="retData"></param>
+        /// <returns></returns>
+        public bool receivedPkt(out byte[] retData)
+        {
+            byte[] bufferIn;
+            int len, i;
+
+            bufferIn = new byte[MAXREADPKTSIZE];
+            retData = null;
+
+            try
+            {
+                if (EndptOut != null) //Verifica se Endpoint existe
+                {
+                    if (uSBavaiable) //USB disponível?
+                    {
+                        //Checando retorno do device
+                        len = EndptIn.MaxPktSize;
+
+
+                        EndptIn.XferData(ref bufferIn, ref len);
+
+                        if (len == 0)
+                        {
+                            ClearBufferOut();
+                            ClearBufferIn();
+                            return false;
+                        }
+
+                        // retData = new byte[500]; //1024 bytes de dados retornados (+ cabeçalho de 24 bytes)
+                        //for (i = 12; i < 512; i++)
+                        //retData[i - 12] = (byte)bufferIn[i];
+
+                        retData = new byte[512];
+
+                        for (i = 0; i < 512; i++) { 
+                            retData[i] = (byte)bufferIn[i];
+                        }
+
+                        return true; //Leitura sem erros
+                    }
+                    else
+                    {
+                        errorMsg = "USB Error! USB is not avaiable. Please, check te cable connection";
+                        return false;
+                    }
+                }
+                else
+                {
+                    errorMsg = "USB Error! Endpoint is not avaiable";
+                    return false; //Endpoint Inexistente
+                }
+
+            }
+            catch (Exception ex)
+            {
+                errorMsg = "USB Error! " + ex.Message;
+                return false;
+            }
+
+            
+        }
+
+
+       
     }
 }
